@@ -1247,7 +1247,8 @@
           "ingredients"
         )));
 
-        const signature = signaturePhrase(entry.description);
+        const entryComponents = componentParts(entry.description);
+        const signature = signaturePhrase(entry, entryComponents);
         if (signature) {
           questions.push(tagItemQuestion(entry, q(
             `signature-${entry.id}`,
@@ -1265,7 +1266,6 @@
           )));
         }
 
-        const entryComponents = componentParts(entry.description);
         const component = signature || entryComponents[0];
         if (component) {
           questions.push(tagItemQuestion(entry, q(
@@ -1285,10 +1285,10 @@
 
     const ALL_QUESTIONS = generateQuestions();
 
-    function signaturePhrase(description) {
-      const parts = description.split(",").map((part) => part.trim()).filter(Boolean);
-      const strong = parts.find((part) => /Aioli|Chutney|Fondue|Balsamic|Masago|Caviar|Poppyseed|Fig|Chimichurri|Remoulade|Bourbon|Rockefeller|Veloute|Wellington|Dijon|Cobbler|Coconut|Prosciutto|Pesto|Lobster Cream|Clam Cream/i.test(part));
-      return strong || parts[1] || parts[0] || "";
+    function signaturePhrase(entry, parts = componentParts(entry.description)) {
+      const strong = parts.filter((part) => /Aioli|Chutney|Fondue|Balsamic|Masago|Caviar|Poppyseed|Fig|Chimichurri|Remoulade|Bourbon|Rockefeller|Veloute|Wellington|Dijon|Cobbler|Coconut|Prosciutto|Pesto|Lobster Cream|Clam Cream/i.test(part));
+      const candidates = unique([...strong, parts[1], parts[0], ...parts].filter(Boolean));
+      return candidates.find((part) => componentOnlyIdentifiesItem(entry, part)) || "";
     }
 
     function componentParts(description) {
@@ -1300,6 +1300,13 @@
 
     function descriptionIncludesRelatedComponent(description, component) {
       return componentParts(description).some((part) => relatedComponent(part, component));
+    }
+
+    function componentOnlyIdentifiesItem(entry, component) {
+      const matchingNames = unique(MENU_ITEMS
+        .filter((candidate) => descriptionIncludesRelatedComponent(candidate.description, component))
+        .map((candidate) => menuItemKey(candidate.name)));
+      return matchingNames.length === 1 && matchingNames[0] === menuItemKey(entry.name);
     }
 
     function sourceLabel(entry) {
