@@ -1058,6 +1058,54 @@
       "Apple Cobbler Bone-In Pork Chop"
     ].map(menuItemKey));
 
+    const GENERIC_COMPONENT_WORDS = new Set([
+      "and",
+      "with",
+      "style",
+      "house",
+      "made",
+      "classic",
+      "fresh",
+      "local",
+      "aged",
+      "certified",
+      "angus",
+      "prime",
+      "jumbo",
+      "lump",
+      "sea",
+      "half",
+      "pound",
+      "bone",
+      "bone-in",
+      "oz",
+      "ounce",
+      "ounces",
+      "slow",
+      "chargrilled",
+      "grilled",
+      "pan",
+      "seared",
+      "roasted",
+      "oven",
+      "sauteed",
+      "braised",
+      "broiled",
+      "baked",
+      "fried",
+      "crispy",
+      "melted",
+      "shredded",
+      "crumbled",
+      "toasted",
+      "whipped",
+      "creamy",
+      "savory",
+      "sweet",
+      "seasonal",
+      "seasoned"
+    ]);
+
     const RULE_QUESTIONS = [
       q("rule-poppyseed-fill", "Complete the dressing: Poppyseed <span class=\"blank-text\">_ _</span> Vinaigrette.", "Honey Dijon", ["Honey Dijon", "Fig Balsamic", "White Wine", "Coconut Lime"], "Poppy + honey + Dijon: seed, sweet, mustard. This appears on the house salad and several lunch greens.", "Lunch and dinner greens", "rules", "blank"),
       q("rule-lunch-pairing-price", "What is the lunch Palmer Pairings price for any two eligible items?", "13.99", ["13.99", "12.99", "14.99", "16.99"], "Pairings are a lunch shortcut: two items, one price, 13.99.", "Lunch Palmer Pairings", "rules"),
@@ -1209,7 +1257,7 @@
               entry.name,
               MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.name),
               3,
-              (option) => MENU_ITEMS.some((other) => other.name === option && descriptionIncludesComponent(other.description, signature))
+              (option) => MENU_ITEMS.some((other) => other.name === option && descriptionIncludesRelatedComponent(other.description, signature))
             ),
             entry.cue,
             sourceLabel(entry),
@@ -1224,7 +1272,7 @@
             `component-${entry.id}`,
             `Which of these ingredients or components comes with ${entry.name}?`,
             component,
-            distractors(component, dishComponents, 3, (option) => entryComponents.some((part) => sameAnswer(part, option))),
+            distractors(component, dishComponents, 3, (option) => entryComponents.some((part) => relatedComponent(part, option))),
             `Build the plate in your head: ${entry.name} includes ${entry.description}.`,
             sourceLabel(entry),
             "ingredients"
@@ -1250,8 +1298,8 @@
         .filter((part) => part && part.length <= 90);
     }
 
-    function descriptionIncludesComponent(description, component) {
-      return componentParts(description).some((part) => sameAnswer(part, component));
+    function descriptionIncludesRelatedComponent(description, component) {
+      return componentParts(description).some((part) => relatedComponent(part, component));
     }
 
     function sourceLabel(entry) {
@@ -1502,6 +1550,29 @@
 
     function sameAnswer(left, right) {
       return normalize(left) === normalize(right);
+    }
+
+    function relatedComponent(left, right) {
+      if (sameAnswer(left, right)) return true;
+      const leftTokens = materialComponentTokens(left);
+      const rightTokens = materialComponentTokens(right);
+      if (!leftTokens.length || !rightTokens.length) return false;
+      return leftTokens.some((token) => rightTokens.includes(token));
+    }
+
+    function materialComponentTokens(value) {
+      return normalize(value)
+        .split(" ")
+        .map((token) => singularComponentToken(token))
+        .filter((token) => token.length > 2 && !GENERIC_COMPONENT_WORDS.has(token));
+    }
+
+    function singularComponentToken(token) {
+      if (token.endsWith("ies") && token.length > 4) return `${token.slice(0, -3)}y`;
+      if (token.endsWith("oes") && token.length > 4) return token.slice(0, -2);
+      if (token.endsWith("ses") && token.length > 4) return token.slice(0, -2);
+      if (token.endsWith("s") && !token.endsWith("ss") && token.length > 3) return token.slice(0, -1);
+      return token;
     }
 
     function updateMiss(question, correct) {
