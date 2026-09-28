@@ -20,7 +20,7 @@ const allowedOrigins = new Set([
   "http://localhost:8787",
 ]);
 
-const allowedMenuFocus = new Set(["mixed", "lunch", "dinner", "missed"]);
+const allowedMenuFocus = new Set(["mixed", "new", "lunch", "dinner", "missed"]);
 const allowedQuestionType = new Set(["all", "ingredients", "prices", "sections", "rules"]);
 const allowedRoundLength = new Set(["10", "20", "30", "all"]);
 

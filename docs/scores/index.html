@@ -342,6 +342,12 @@
       white-space: nowrap;
     }
 
+    .new-pill {
+      border-color: rgba(21, 71, 55, 0.18);
+      color: var(--mint-ink);
+      background: var(--mint);
+    }
+
     .progress {
       height: 10px;
       overflow: hidden;
@@ -788,6 +794,7 @@
             Menu focus
             <select id="menuSelect">
               <option value="mixed">Lunch and dinner</option>
+              <option value="new">New items only</option>
               <option value="lunch">Lunch only</option>
               <option value="dinner">Dinner only</option>
               <option value="missed">Missed-item review</option>
@@ -851,7 +858,7 @@
         </div>
         <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
         <div class="question-area">
-          <p class="question-text" id="questionText">Choose a focus, then start. Most questions drill the dishes themselves and what comes in them.</p>
+          <p class="question-text" id="questionText">Choose a focus, then start. New items only drills dishes that are not on the old Toast menu.</p>
           <p class="question-sub" id="questionSub">Tip: say the dish description out loud before you tap. Servers remember menu language faster when they practice the guest-facing sentence.</p>
           <div class="options" id="options" aria-live="polite"></div>
           <form class="fill-row" id="fillForm" hidden>
@@ -941,6 +948,7 @@
       <div class="source-links">
         <a href="https://www.arnoldpalmercountryclub.com/_files/ugd/dbad54_5364c77c9ae948dda3d577d8ac7ba120.pdf" target="_blank" rel="noreferrer">Lunch source</a>
         <a href="https://www.arnoldpalmercountryclub.com/_files/ugd/dbad54_0a88a2fe5ddb43bdb026b14f640f75f5.pdf" target="_blank" rel="noreferrer">Dinner source</a>
+        <a href="https://order.toasttab.com/online/palmer-legends-country-club-1635-palmer-way" target="_blank" rel="noreferrer">Old Toast baseline</a>
       </div>
     </footer>
   </div>
@@ -1019,6 +1027,36 @@
       item("dinner", "Comfort", "Apple Cobbler Bone-In Pork Chop", "29.99", "Bone-In Pork Chop, Apple Cobbler Glaze, Whipped Buttermilk Potatoes, Grilled Asparagus", "Pork chop gets the apple cobbler glaze."),
       item("dinner", "Comfort", "Honey Dijon Pork Ribeye", "23.99", "Tender Pork Ribeye, Savory Honey Dijon Glaze, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Pork ribeye carries the savory honey Dijon glaze.")
     ];
+
+    // New compared with the old Toast ordering menu as of September 28, 2026.
+    const NEW_ITEM_NAMES = new Set([
+      "Crab Cakes",
+      "Florida Orange Shrimp Cocktail",
+      "Steakhouse Onion Rings",
+      "Seared Scallops",
+      "Shrimp Deviled Eggs",
+      "Strawberry Salad",
+      "Grilled Chicken Cobb",
+      "Chimichurri Steak Sandwich",
+      "Chicken Pesto Wrap",
+      "Open-Faced Meatloaf Melt",
+      "Mushroom Swiss Burger",
+      "Steakhouse Burger",
+      "Tropical Ahi Bowl",
+      "Peach Glazed Salmon Bowl",
+      "Wild Mushroom Chicken",
+      "14 oz. Snake River Farms Prime Ribeye",
+      "Tenderloin Tips",
+      "Chateau for Two",
+      "Bison Bolognese",
+      "Short Rib Ravioli",
+      "Linguine and Clams",
+      "Chicken Rockefeller",
+      "New England Halibut",
+      "Lobster and Shrimp Wellington",
+      "Tomato Glazed Meatloaf",
+      "Apple Cobbler Bone-In Pork Chop"
+    ].map(menuItemKey));
 
     const RULE_QUESTIONS = [
       q("rule-poppyseed-fill", "Complete the dressing: Poppyseed <span class=\"blank-text\">_ _</span> Vinaigrette.", "Honey Dijon", ["Honey Dijon", "Fig Balsamic", "White Wine", "Coconut Lime"], "Poppy + honey + Dijon: seed, sweet, mustard. This appears on the house salad and several lunch greens.", "Lunch and dinner greens", "rules", "blank"),
@@ -1109,6 +1147,20 @@
       return { id, prompt, answer, options, cue, source, category, mode };
     }
 
+    function tagItemQuestion(entry, question) {
+      question.itemId = entry.id;
+      question.isNewItem = isNewItem(entry);
+      return question;
+    }
+
+    function isNewItem(entry) {
+      return NEW_ITEM_NAMES.has(menuItemKey(entry.name));
+    }
+
+    function menuItemKey(value) {
+      return String(value || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+    }
+
     function generateQuestions() {
       const questions = [...RULE_QUESTIONS];
       const sections = unique(MENU_ITEMS.map((entry) => entry.section));
@@ -1116,7 +1168,7 @@
       const dishComponents = unique(MENU_ITEMS.flatMap((entry) => componentParts(entry.description)));
 
       MENU_ITEMS.forEach((entry) => {
-        questions.push(q(
+        questions.push(tagItemQuestion(entry, q(
           `price-${entry.id}`,
           `What is the listed price for ${entry.name}?`,
           entry.price,
@@ -1124,9 +1176,9 @@
           `${entry.cue} Price check: ${entry.name} is ${entry.price}.`,
           sourceLabel(entry),
           "prices"
-        ));
+        )));
 
-        questions.push(q(
+        questions.push(tagItemQuestion(entry, q(
           `section-${entry.id}`,
           `Which menu section is ${entry.name} in?`,
           entry.section,
@@ -1134,9 +1186,9 @@
           `${entry.name} lives in ${entry.section}. ${entry.cue}`,
           sourceLabel(entry),
           "sections"
-        ));
+        )));
 
-        questions.push(q(
+        questions.push(tagItemQuestion(entry, q(
           `desc-${entry.id}`,
           `Which description belongs to ${entry.name}?`,
           entry.description,
@@ -1144,11 +1196,11 @@
           entry.cue,
           sourceLabel(entry),
           "ingredients"
-        ));
+        )));
 
         const signature = signaturePhrase(entry.description);
         if (signature) {
-          questions.push(q(
+          questions.push(tagItemQuestion(entry, q(
             `signature-${entry.id}`,
             `Which item includes ${signature}?`,
             entry.name,
@@ -1156,12 +1208,12 @@
             entry.cue,
             sourceLabel(entry),
             "ingredients"
-          ));
+          )));
         }
 
         const component = signature || componentParts(entry.description)[0];
         if (component) {
-          questions.push(q(
+          questions.push(tagItemQuestion(entry, q(
             `component-${entry.id}`,
             `Which ingredient or component comes with ${entry.name}?`,
             component,
@@ -1169,7 +1221,7 @@
             `Build the plate in your head: ${entry.name} includes ${entry.description}.`,
             sourceLabel(entry),
             "ingredients"
-          ));
+          )));
         }
       });
 
@@ -1192,8 +1244,7 @@
     }
 
     function sourceLabel(entry) {
-      if (entry.menu === "both") return "Lunch and dinner";
-      return `${capitalize(entry.menu)} ${entry.section}`;
+      return entry.menu === "both" ? "Lunch and dinner" : `${capitalize(entry.menu)} ${entry.section}`;
     }
 
     function capitalize(value) {
@@ -1257,7 +1308,7 @@
       els.nameHint.textContent = "";
 
       const menu = overrides.menu || els.menuSelect.value;
-      const type = overrides.type || els.typeSelect.value;
+      let type = overrides.type || els.typeSelect.value;
       const requestedCount = overrides.count || els.countSelect.value;
       let pool = filterQuestions(menu, type);
 
@@ -1266,7 +1317,12 @@
       }
 
       if (!pool.length) {
-        pool = filterQuestions("mixed", "all");
+        if (menu === "new") {
+          type = "all";
+          pool = filterQuestions("new", "all");
+        } else {
+          pool = filterQuestions("mixed", "all");
+        }
       }
 
       const count = requestedCount === "all" ? pool.length : Math.min(Number(requestedCount), pool.length);
@@ -1316,6 +1372,7 @@
       return ALL_QUESTIONS.filter((question) => {
         const matchesType = type === "all" || question.category === type;
         if (!matchesType) return false;
+        if (menu === "new") return Boolean(question.isNewItem);
         if (menu === "mixed") return true;
         if (menu === "missed") return false;
         const source = question.source.toLowerCase();
@@ -1344,7 +1401,7 @@
       }
 
       els.questionText.innerHTML = question.prompt;
-      els.questionSub.textContent = `${question.source} - ${question.categoryLabel || labelCategory(question.category)}`;
+      els.questionSub.textContent = `${question.isNewItem ? "New item - " : ""}${question.source} - ${question.categoryLabel || labelCategory(question.category)}`;
       els.progressPill.textContent = `${state.index + 1} / ${state.round.length}`;
       els.scorePill.textContent = `Score ${state.score}`;
       els.streakPill.textContent = `Streak ${state.streak}`;
@@ -1623,6 +1680,7 @@
             <h3>${entry.name}</h3>
             <div class="meta">
               <span class="pill">${sourceLabel(entry)}</span>
+              ${isNewItem(entry) ? "<span class=\"pill new-pill\">New item</span>" : ""}
               <span class="pill">${entry.price}</span>
             </div>
           </div>
@@ -1716,6 +1774,7 @@
     function labelMenu(value) {
       return {
         mixed: "Lunch and dinner",
+        new: "New items",
         lunch: "Lunch",
         dinner: "Dinner",
         missed: "Missed review"
@@ -1821,7 +1880,7 @@
           type: "object",
           properties: {
             playerName: { type: "string", minLength: 2, maxLength: 60 },
-            menu: { enum: ["mixed", "lunch", "dinner", "missed"] },
+            menu: { enum: ["mixed", "new", "lunch", "dinner", "missed"] },
             type: { enum: ["all", "ingredients", "prices", "sections", "rules"] },
             count: { enum: ["10", "20", "30", "all"] }
           },
