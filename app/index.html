@@ -796,8 +796,8 @@
           <label>
             Question type
             <select id="typeSelect">
-              <option value="all">All details</option>
-              <option value="ingredients">Ingredients</option>
+              <option value="all">Dish details + essentials</option>
+              <option value="ingredients">Dishes and ingredients</option>
               <option value="prices">Prices</option>
               <option value="sections">Menu sections</option>
               <option value="rules">Service rules</option>
@@ -851,8 +851,8 @@
         </div>
         <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
         <div class="question-area">
-          <p class="question-text" id="questionText">Choose a focus, then start. The first round includes salads, handhelds, soups, steak details, seafood, pasta, and comfort dishes.</p>
-          <p class="question-sub" id="questionSub">Tip: say the answer out loud before you tap. Servers remember menu language faster when they practice the guest-facing sentence.</p>
+          <p class="question-text" id="questionText">Choose a focus, then start. Most questions drill the dishes themselves and what comes in them.</p>
+          <p class="question-sub" id="questionSub">Tip: say the dish description out loud before you tap. Servers remember menu language faster when they practice the guest-facing sentence.</p>
           <div class="options" id="options" aria-live="polite"></div>
           <form class="fill-row" id="fillForm" hidden>
             <label class="visually-hidden" for="fillAnswer">Answer</label>
@@ -1113,6 +1113,7 @@
       const questions = [...RULE_QUESTIONS];
       const sections = unique(MENU_ITEMS.map((entry) => entry.section));
       const prices = unique(MENU_ITEMS.map((entry) => entry.price));
+      const dishComponents = unique(MENU_ITEMS.flatMap((entry) => componentParts(entry.description)));
 
       MENU_ITEMS.forEach((entry) => {
         questions.push(q(
@@ -1157,6 +1158,19 @@
             "ingredients"
           ));
         }
+
+        const component = signature || componentParts(entry.description)[0];
+        if (component) {
+          questions.push(q(
+            `component-${entry.id}`,
+            `Which ingredient or component comes with ${entry.name}?`,
+            component,
+            distractors(component, dishComponents, 3),
+            `Build the plate in your head: ${entry.name} includes ${entry.description}.`,
+            sourceLabel(entry),
+            "ingredients"
+          ));
+        }
       });
 
       return questions;
@@ -1168,6 +1182,13 @@
       const parts = description.split(",").map((part) => part.trim()).filter(Boolean);
       const strong = parts.find((part) => /Aioli|Chutney|Fondue|Balsamic|Masago|Caviar|Poppyseed|Fig|Chimichurri|Remoulade|Bourbon|Rockefeller|Veloute|Wellington|Dijon|Cobbler|Coconut|Prosciutto|Pesto|Lobster Cream|Clam Cream/i.test(part));
       return strong || parts[1] || parts[0] || "";
+    }
+
+    function componentParts(description) {
+      return description
+        .split(",")
+        .map((part) => part.trim())
+        .filter((part) => part && part.length <= 90);
     }
 
     function sourceLabel(entry) {
@@ -1249,7 +1270,7 @@
       }
 
       const count = requestedCount === "all" ? pool.length : Math.min(Number(requestedCount), pool.length);
-      state.round = shuffle(pool).slice(0, count);
+      state.round = buildRound(pool, count, { menu, type, requestedCount });
       state.index = 0;
       state.score = 0;
       state.streak = 0;
@@ -1261,6 +1282,34 @@
       els.quizTitle.textContent = `${playerName}: ${count} ${type === "all" ? "menu" : type} questions`;
       renderQuestion();
       updateSummary();
+    }
+
+    function buildRound(pool, count, settings) {
+      if (settings.menu === "missed" || settings.type !== "all" || settings.requestedCount === "all") {
+        return shuffle(pool).slice(0, count);
+      }
+
+      const selected = [];
+      const used = new Set();
+      const take = (category, amount) => {
+        const choices = shuffle(pool.filter((question) => question.category === category && !used.has(question.id)));
+        choices.slice(0, amount).forEach((question) => {
+          used.add(question.id);
+          selected.push(question);
+        });
+      };
+
+      const supportCount = Math.max(1, Math.round(count * 0.1));
+      take("rules", supportCount);
+      take("prices", supportCount);
+      take("sections", supportCount);
+      take("ingredients", count - selected.length);
+
+      shuffle(pool.filter((question) => !used.has(question.id))).forEach((question) => {
+        if (selected.length < count) selected.push(question);
+      });
+
+      return shuffle(selected).slice(0, count);
     }
 
     function filterQuestions(menu, type) {
@@ -1675,7 +1724,7 @@
 
     function labelType(value) {
       return {
-        all: "all details",
+        all: "dish details",
         ingredients: "ingredients",
         prices: "prices",
         sections: "sections",
