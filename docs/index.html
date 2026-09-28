@@ -1217,9 +1217,10 @@
       const dishComponents = unique(MENU_ITEMS.flatMap((entry) => componentParts(entry.description)));
 
       MENU_ITEMS.forEach((entry) => {
+        const promptName = itemPromptName(entry);
         questions.push(tagItemQuestion(entry, q(
           `price-${entry.id}`,
-          `What is the listed price for ${entry.name}?`,
+          `What is the listed price for ${promptName}?`,
           entry.price,
           distractors(entry.price, prices, 3),
           `${entry.cue} Price check: ${entry.name} is ${entry.price}.`,
@@ -1229,7 +1230,7 @@
 
         questions.push(tagItemQuestion(entry, q(
           `section-${entry.id}`,
-          `Which menu section is ${entry.name} in?`,
+          `Which menu section is ${promptName} in?`,
           entry.section,
           distractors(entry.section, sections, 3),
           `${entry.name} lives in ${entry.section}. ${entry.cue}`,
@@ -1239,7 +1240,7 @@
 
         questions.push(tagItemQuestion(entry, q(
           `desc-${entry.id}`,
-          `Which description belongs to ${entry.name}?`,
+          `Which description belongs to ${promptName}?`,
           entry.description,
           distractors(entry.description, MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.description), 3),
           entry.cue,
@@ -1249,28 +1250,11 @@
 
         const entryComponents = componentParts(entry.description);
         const signature = signaturePhrase(entry, entryComponents);
-        if (signature) {
-          questions.push(tagItemQuestion(entry, q(
-            `signature-${entry.id}`,
-            `Which of these items includes ${signature}?`,
-            entry.name,
-            distractors(
-              entry.name,
-              MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.name),
-              3,
-              (option) => MENU_ITEMS.some((other) => other.name === option && descriptionIncludesRelatedComponent(other.description, signature))
-            ),
-            entry.cue,
-            sourceLabel(entry),
-            "ingredients"
-          )));
-        }
-
         const component = signature || entryComponents[0];
         if (component) {
           questions.push(tagItemQuestion(entry, q(
             `component-${entry.id}`,
-            `Which of these ingredients or components comes with ${entry.name}?`,
+            `Which of these ingredients or components comes with ${promptName}?`,
             component,
             distractors(component, dishComponents, 3, (option) => entryComponents.some((part) => relatedComponent(part, option))),
             `Build the plate in your head: ${entry.name} includes ${entry.description}.`,
@@ -1281,6 +1265,11 @@
       });
 
       return questions;
+    }
+
+    function itemPromptName(entry) {
+      if (entry.menu === "both") return entry.name;
+      return `${capitalize(entry.menu)} ${entry.name}`;
     }
 
     const ALL_QUESTIONS = generateQuestions();
