@@ -1077,6 +1077,7 @@
     const PRODUCTION_API_ORIGIN = "https://palmer-menu-quiz-2026.seansandwich22.chatgpt.site";
     const SCORE_API_BASE = location.hostname === "alphapoptart.github.io" ? PRODUCTION_API_ORIGIN : "";
     const GITHUB_PAGE_BASE = location.hostname === "alphapoptart.github.io" ? "/palmer-menu-quiz/" : "/";
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const state = {
       round: [],
@@ -1336,7 +1337,7 @@
       state.roundSettings = { menu, type, requestedCount };
       els.quizKicker.textContent = menu === "missed" ? "Review round" : "Active round";
       els.quizTitle.textContent = `${playerName}: ${count} ${type === "all" ? "menu" : type} questions`;
-      renderQuestion();
+      renderQuestion({ resetFrame: true });
       updateSummary();
     }
 
@@ -1386,7 +1387,7 @@
         .filter(Boolean);
     }
 
-    function renderQuestion() {
+    function renderQuestion(options = {}) {
       const question = state.round[state.index];
       state.activeQuestion = question;
       state.answered = false;
@@ -1410,6 +1411,7 @@
       if (question.mode === "blank") {
         els.fillForm.hidden = false;
         els.fillAnswer.focus({ preventScroll: true });
+        if (options.resetFrame) resetQuestionFrame();
         return;
       }
 
@@ -1421,6 +1423,17 @@
         button.textContent = option;
         button.addEventListener("click", () => answerQuestion(option, button));
         els.options.append(button);
+      });
+
+      if (options.resetFrame) resetQuestionFrame();
+    }
+
+    function resetQuestionFrame() {
+      window.requestAnimationFrame(() => {
+        els.quizTitle.scrollIntoView({
+          behavior: prefersReducedMotion.matches ? "auto" : "smooth",
+          block: "start"
+        });
       });
     }
 
@@ -1537,7 +1550,7 @@
       if (state.index >= state.round.length) {
         finishRound();
       } else {
-        renderQuestion();
+        renderQuestion({ resetFrame: true });
       }
     }
 
