@@ -794,7 +794,7 @@
             Menu focus
             <select id="menuSelect">
               <option value="mixed">Lunch and dinner</option>
-              <option value="new">New items only</option>
+              <option value="new">New items: what comes in them</option>
               <option value="lunch">Lunch only</option>
               <option value="dinner">Dinner only</option>
               <option value="missed">Missed-item review</option>
@@ -858,7 +858,7 @@
         </div>
         <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
         <div class="question-area">
-          <p class="question-text" id="questionText">Choose a focus, then start. New items only drills dishes that are not on the old Toast menu.</p>
+          <p class="question-text" id="questionText">Choose a focus, then start. New items drills what comes in dishes that are not on the old Toast menu.</p>
           <p class="question-sub" id="questionSub">Tip: say the dish description out loud before you tap. Servers remember menu language faster when they practice the guest-facing sentence.</p>
           <div class="options" id="options" aria-live="polite"></div>
           <form class="fill-row" id="fillForm" hidden>
@@ -1371,7 +1371,8 @@
       els.nameHint.textContent = "";
 
       const menu = overrides.menu || els.menuSelect.value;
-      let type = overrides.type || els.typeSelect.value;
+      const selectedType = overrides.type || els.typeSelect.value;
+      let type = effectiveQuestionType(menu, selectedType);
       const requestedCount = overrides.count || els.countSelect.value;
       let pool = filterQuestions(menu, type);
 
@@ -1381,9 +1382,10 @@
 
       if (!pool.length) {
         if (menu === "new") {
-          type = "all";
-          pool = filterQuestions("new", "all");
+          type = "ingredients";
+          pool = filterQuestions("new", "ingredients");
         } else {
+          type = "all";
           pool = filterQuestions("mixed", "all");
         }
       }
@@ -1401,6 +1403,17 @@
       els.quizTitle.textContent = `${playerName}: ${count} ${type === "all" ? "menu" : type} questions`;
       renderQuestion({ resetFrame: true });
       updateSummary();
+    }
+
+    function effectiveQuestionType(menu, type) {
+      if (menu === "new" && type === "all") return "ingredients";
+      return type;
+    }
+
+    function syncQuestionTypeForMenu() {
+      if (els.menuSelect.value === "new" && els.typeSelect.value === "all") {
+        els.typeSelect.value = "ingredients";
+      }
     }
 
     function buildRound(pool, count, settings) {
@@ -1928,6 +1941,7 @@
     els.serverNameInput.value = state.playerName;
 
     els.startButton.addEventListener("click", () => startRound());
+    els.menuSelect.addEventListener("change", syncQuestionTypeForMenu);
     els.freshRoundButton.addEventListener("click", () => startRound({ menu: "mixed", type: "all", count: "10" }));
     els.practiceMissedButton.addEventListener("click", () => {
       els.menuSelect.value = "missed";
