@@ -1,0 +1,1813 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#132538">
+  <meta
+    name="description"
+    content="Interactive Arnold Palmer Country Club menu training quiz for servers with scores, missed-item practice, and memory cues."
+  >
+  <title>Palmer Menu Quiz</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23132538'/%3E%3Cpath d='M16 43h32' stroke='%23c5a35c' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M21 39V17h8c7 0 11 4 11 10s-4 10-11 10h-3v2' fill='none' stroke='%23fffaf0' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='47' cy='17' r='4' fill='%23c5a35c'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #132538;
+      --ink-2: #24364b;
+      --ink-3: #526174;
+      --paper: #fffaf0;
+      --linen: #f6efe1;
+      --panel: #ffffff;
+      --gold: #b9954f;
+      --gold-2: #d7c086;
+      --mint: #dcefe6;
+      --mint-ink: #154737;
+      --rose: #f8dfdc;
+      --rose-ink: #7b2f2a;
+      --blue: #dfeaf6;
+      --blue-ink: #163b61;
+      --line: rgba(19, 37, 56, 0.14);
+      --shadow: 0 22px 60px rgba(19, 37, 56, 0.14);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      letter-spacing: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--paper);
+    }
+
+    body {
+      min-height: 100%;
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(19, 37, 56, 0.98) 0 136px, transparent 136px),
+        radial-gradient(circle at 18% 12%, rgba(215, 192, 134, 0.18), transparent 26rem),
+        linear-gradient(180deg, var(--paper), #f7f2e8 48%, #fffaf4);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: 44px;
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .app {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 24px clamp(16px, 3vw, 36px) 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 92px;
+      color: var(--paper);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .mark {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgba(215, 192, 134, 0.56);
+      border-radius: var(--radius);
+      color: var(--gold-2);
+      background: rgba(255, 250, 240, 0.07);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.7rem, 3vw, 3rem);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .deck {
+      margin-top: 4px;
+      color: rgba(255, 250, 240, 0.78);
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ghost-link,
+    .small-button,
+    .primary-button,
+    .option-button,
+    .tab-button {
+      border-radius: var(--radius);
+      transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .ghost-link,
+    .small-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 13px;
+      border: 1px solid rgba(255, 250, 240, 0.24);
+      color: var(--paper);
+      background: rgba(255, 250, 240, 0.07);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .small-button {
+      border-color: var(--line);
+      color: var(--ink);
+      background: var(--panel);
+      box-shadow: 0 8px 22px rgba(19, 37, 56, 0.08);
+    }
+
+    .small-button:hover,
+    .ghost-link:hover,
+    .primary-button:hover,
+    .option-button:hover,
+    .tab-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(250px, 330px);
+      gap: 18px;
+      align-items: start;
+      margin-top: 18px;
+    }
+
+    .app-view {
+      display: block;
+    }
+
+    .panel,
+    .quiz-stage,
+    .study-section {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .panel,
+    .study-section {
+      padding: 18px;
+    }
+
+    .panel h2,
+    .study-section h2 {
+      font-size: 0.98rem;
+      line-height: 1.2;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      letter-spacing: 0;
+    }
+
+    .control-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--ink-3);
+      font-size: 0.88rem;
+      font-weight: 750;
+    }
+
+    select,
+    input[type="search"],
+    input[type="text"] {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #fffdf8;
+      outline: none;
+    }
+
+    select:focus,
+    input:focus,
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid rgba(185, 149, 79, 0.42);
+      outline-offset: 2px;
+    }
+
+    .primary-button {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 16px;
+      color: #fffdf7;
+      background: linear-gradient(135deg, #143451, #102437);
+      box-shadow: 0 13px 28px rgba(19, 37, 56, 0.24);
+      font-weight: 820;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--linen);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.4rem;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      color: var(--ink-3);
+      font-size: 0.82rem;
+      font-weight: 720;
+    }
+
+    .quiz-stage {
+      min-height: 565px;
+      overflow: hidden;
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(19, 37, 56, 0.06), rgba(185, 149, 79, 0.1));
+    }
+
+    .stage-kicker {
+      color: var(--gold);
+      font-size: 0.82rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .stage-title {
+      margin-top: 5px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.45rem, 3vw, 2.25rem);
+      line-height: 1.1;
+    }
+
+    .round-meta {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 6px 10px;
+      border: 1px solid rgba(19, 37, 56, 0.12);
+      border-radius: 999px;
+      color: var(--ink-2);
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 0.82rem;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .progress {
+      height: 10px;
+      overflow: hidden;
+      background: rgba(19, 37, 56, 0.09);
+    }
+
+    .progress span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), #77a68a);
+      transition: width 220ms ease;
+    }
+
+    .question-area {
+      display: grid;
+      gap: 18px;
+      padding: 24px 20px 20px;
+    }
+
+    .question-text {
+      font-size: clamp(1.3rem, 2.4vw, 2.05rem);
+      line-height: 1.2;
+      font-weight: 840;
+    }
+
+    .blank-text {
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .question-sub {
+      color: var(--ink-3);
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 74ch;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .option-button {
+      display: flex;
+      align-items: center;
+      min-height: 66px;
+      padding: 14px 16px;
+      border: 1px solid rgba(19, 37, 56, 0.13);
+      color: var(--ink);
+      background: #fffdf8;
+      text-align: left;
+      font-weight: 760;
+      box-shadow: 0 8px 20px rgba(19, 37, 56, 0.06);
+    }
+
+    .option-button.correct {
+      border-color: rgba(21, 71, 55, 0.28);
+      color: var(--mint-ink);
+      background: var(--mint);
+    }
+
+    .option-button.wrong {
+      border-color: rgba(123, 47, 42, 0.26);
+      color: var(--rose-ink);
+      background: var(--rose);
+    }
+
+    .fill-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+      gap: 10px;
+    }
+
+    .feedback {
+      display: none;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffdf8;
+    }
+
+    .feedback.show {
+      display: grid;
+    }
+
+    .feedback.good {
+      border-color: rgba(21, 71, 55, 0.24);
+      background: #f3fbf6;
+    }
+
+    .feedback.bad {
+      border-color: rgba(123, 47, 42, 0.24);
+      background: #fff7f6;
+    }
+
+    .feedback strong {
+      font-size: 1.02rem;
+    }
+
+    .feedback p {
+      color: var(--ink-2);
+      line-height: 1.5;
+    }
+
+    .feedback-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .next-button {
+      width: auto;
+      min-width: 150px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .tab-button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      background: #fffdf8;
+      font-size: 0.9rem;
+      font-weight: 780;
+    }
+
+    .tab-button.active {
+      color: #fffdf7;
+      background: var(--ink);
+    }
+
+    .side-note {
+      margin-top: 14px;
+      color: var(--ink-3);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .field-note {
+      min-height: 20px;
+      color: var(--rose-ink);
+      font-size: 0.84rem;
+      font-weight: 720;
+    }
+
+    .miss-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .miss-item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--linen);
+    }
+
+    .miss-item b {
+      display: block;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+
+    .miss-item p {
+      color: var(--ink-3);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      color: var(--ink-3);
+      font-size: 0.9rem;
+    }
+
+    .study-section {
+      margin-top: 18px;
+    }
+
+    .study-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .study-head p {
+      margin-top: 6px;
+      color: var(--ink-3);
+      line-height: 1.45;
+    }
+
+    .study-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: min(520px, 100%);
+    }
+
+    .study-tools input {
+      min-width: 0;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .score-board-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+      gap: 12px;
+    }
+
+    .score-panel {
+      min-height: 300px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffdf8;
+    }
+
+    .score-panel h3 {
+      margin: 0 0 12px;
+      color: var(--ink-2);
+      font-size: 1rem;
+      text-transform: uppercase;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .score-row:first-of-type {
+      border-top: 0;
+    }
+
+    .score-row b,
+    .score-row span {
+      overflow-wrap: anywhere;
+    }
+
+    .score-row p {
+      margin-top: 4px;
+      color: var(--ink-3);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .score-percent {
+      display: grid;
+      width: 58px;
+      height: 58px;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--ink);
+      background: var(--gold-2);
+      font-weight: 900;
+    }
+
+    .menu-card {
+      display: grid;
+      gap: 9px;
+      min-height: 178px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffdf8;
+    }
+
+    .menu-card h3 {
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .menu-card .meta {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .menu-card p {
+      color: var(--ink-3);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 20px;
+      color: var(--ink-3);
+      font-size: 0.9rem;
+      line-height: 1.4;
+      flex-wrap: wrap;
+    }
+
+    .source-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .source-links a {
+      color: var(--blue-ink);
+      font-weight: 780;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .shell {
+        grid-template-columns: 280px minmax(0, 1fr);
+      }
+
+      .right-panel {
+        grid-column: 1 / -1;
+      }
+
+      .menu-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        background:
+          linear-gradient(180deg, rgba(19, 37, 56, 0.98) 0 188px, transparent 188px),
+          linear-gradient(180deg, var(--paper), #fffaf4);
+      }
+
+      .app {
+        padding-inline: 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .shell,
+      .menu-grid,
+      .score-board-grid,
+      .options,
+      .fill-row {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-header,
+      .study-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .round-meta {
+        justify-content: flex-start;
+      }
+
+      .quiz-stage {
+        min-height: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">P</div>
+        <div>
+          <h1>Palmer Menu Quiz</h1>
+          <p class="deck">Server training for the July 2026 lunch and dinner menus.</p>
+        </div>
+      </div>
+      <nav class="top-actions" aria-label="Source menus">
+        <a class="ghost-link" id="quizNavLink" href="./">Quiz</a>
+        <a class="ghost-link" id="scoresNavLink" href="scores/">Scores</a>
+        <a class="ghost-link" href="https://www.arnoldpalmercountryclub.com/_files/ugd/dbad54_5364c77c9ae948dda3d577d8ac7ba120.pdf" target="_blank" rel="noreferrer">Lunch PDF</a>
+        <a class="ghost-link" href="https://www.arnoldpalmercountryclub.com/_files/ugd/dbad54_0a88a2fe5ddb43bdb026b14f640f75f5.pdf" target="_blank" rel="noreferrer">Dinner PDF</a>
+      </nav>
+    </header>
+
+    <div id="quizView" class="app-view">
+    <main class="shell">
+      <section class="panel" aria-labelledby="setup-title">
+        <h2 id="setup-title">Round Setup</h2>
+        <div class="control-grid">
+          <label>
+            Server name
+            <input id="serverNameInput" type="text" autocomplete="name" maxlength="60" placeholder="Enter name before quiz">
+            <span class="field-note" id="nameHint"></span>
+          </label>
+          <label>
+            Menu focus
+            <select id="menuSelect">
+              <option value="mixed">Lunch and dinner</option>
+              <option value="lunch">Lunch only</option>
+              <option value="dinner">Dinner only</option>
+              <option value="missed">Missed-item review</option>
+            </select>
+          </label>
+          <label>
+            Question type
+            <select id="typeSelect">
+              <option value="all">All details</option>
+              <option value="ingredients">Ingredients</option>
+              <option value="prices">Prices</option>
+              <option value="sections">Menu sections</option>
+              <option value="rules">Service rules</option>
+            </select>
+          </label>
+          <label>
+            Round length
+            <select id="countSelect">
+              <option value="10">10 questions</option>
+              <option value="20" selected>20 questions</option>
+              <option value="30">30 questions</option>
+              <option value="all">Everything available</option>
+            </select>
+          </label>
+          <button id="startButton" class="primary-button" type="button">Start Round</button>
+        </div>
+
+        <div class="stats" aria-label="Score summary">
+          <div class="stat">
+            <strong id="bestScore">0%</strong>
+            <span>Best score</span>
+          </div>
+          <div class="stat">
+            <strong id="missedCount">0</strong>
+            <span>Study stack</span>
+          </div>
+          <div class="stat">
+            <strong id="roundsTaken">0</strong>
+            <span>Rounds</span>
+          </div>
+          <div class="stat">
+            <strong id="avgScore">0%</strong>
+            <span>Average</span>
+          </div>
+        </div>
+
+        <p class="side-note">Wrong answers become review cards with memory hooks. Get a missed card right twice and it leaves the stack.</p>
+      </section>
+
+      <section class="quiz-stage" aria-labelledby="quiz-title">
+        <div class="stage-header">
+          <div>
+            <div class="stage-kicker" id="quizKicker">Ready</div>
+            <h2 class="stage-title" id="quiz-title">Open a round and sharpen the menu.</h2>
+          </div>
+          <div class="round-meta" aria-label="Current round stats">
+            <span class="pill" id="progressPill">0 / 0</span>
+            <span class="pill" id="scorePill">Score 0</span>
+            <span class="pill" id="streakPill">Streak 0</span>
+          </div>
+        </div>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+        <div class="question-area">
+          <p class="question-text" id="questionText">Choose a focus, then start. The first round includes salads, handhelds, soups, steak details, seafood, pasta, and comfort dishes.</p>
+          <p class="question-sub" id="questionSub">Tip: say the answer out loud before you tap. Servers remember menu language faster when they practice the guest-facing sentence.</p>
+          <div class="options" id="options" aria-live="polite"></div>
+          <form class="fill-row" id="fillForm" hidden>
+            <label class="visually-hidden" for="fillAnswer">Answer</label>
+            <input id="fillAnswer" type="text" autocomplete="off" placeholder="Type the missing words">
+            <button class="primary-button next-button" type="submit">Check</button>
+          </form>
+          <div class="feedback" id="feedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="panel right-panel" aria-labelledby="coach-title">
+        <h2 id="coach-title">Memory Coach</h2>
+        <div class="tabs" role="tablist" aria-label="Quick actions">
+          <button class="tab-button active" id="practiceMissedButton" type="button">Practice Missed</button>
+          <button class="tab-button" id="freshRoundButton" type="button">Fresh 10</button>
+          <button class="tab-button" id="resetButton" type="button">Reset</button>
+        </div>
+        <p class="side-note" id="coachNote">No missed items yet. A wrong answer will add a cue here.</p>
+        <div class="miss-list" id="missList"></div>
+
+        <h2 style="margin-top: 22px;">Score History</h2>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </main>
+
+    <section class="study-section" aria-labelledby="guide-title">
+      <div class="study-head">
+        <div>
+          <h2 id="guide-title">Menu Study Guide</h2>
+          <p>Search any ingredient, price, item, or menu section. This guide mirrors the quiz bank.</p>
+        </div>
+        <div class="study-tools">
+          <label class="visually-hidden" for="searchInput">Search study guide</label>
+          <input id="searchInput" type="search" placeholder="Search: honey dijon, crab, 17.99, pasta">
+        </div>
+      </div>
+      <div class="menu-grid" id="menuGrid"></div>
+    </section>
+    </div>
+
+    <section id="scoresView" class="study-section app-view" aria-labelledby="scores-title" hidden>
+      <div class="study-head">
+        <div>
+          <h2 id="scores-title">Manager Score Board</h2>
+          <p>Submitted quiz rounds from every server name. Use this to spot who is ready and who needs another menu drill.</p>
+        </div>
+        <div class="study-tools">
+          <label class="visually-hidden" for="scoreSearchInput">Search score board</label>
+          <input id="scoreSearchInput" type="search" placeholder="Search by server name">
+          <button id="refreshScoresButton" class="small-button" type="button">Refresh</button>
+        </div>
+      </div>
+      <div class="stats" id="remoteScoreSummary" aria-label="Submitted score summary">
+        <div class="stat">
+          <strong id="remotePlayers">0</strong>
+          <span>Servers</span>
+        </div>
+        <div class="stat">
+          <strong id="remoteAttempts">0</strong>
+          <span>Attempts</span>
+        </div>
+        <div class="stat">
+          <strong id="remoteBest">0%</strong>
+          <span>Best</span>
+        </div>
+        <div class="stat">
+          <strong id="remoteAverage">0%</strong>
+          <span>Average</span>
+        </div>
+      </div>
+      <p class="side-note" id="scoreBoardStatus">Loading submitted scores...</p>
+      <div class="score-board-grid">
+        <div class="score-panel">
+          <h3>Leaderboard</h3>
+          <div id="leaderboardList"></div>
+        </div>
+        <div class="score-panel">
+          <h3>Latest Attempts</h3>
+          <div id="latestScoresList"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Submitted scores are saved for the manager board. Missed-item practice cards stay local to this browser.</p>
+      <div class="source-links">
+        <a href="https://www.arnoldpalmercountryclub.com/_files/ugd/dbad54_5364c77c9ae948dda3d577d8ac7ba120.pdf" target="_blank" rel="noreferrer">Lunch source</a>
+        <a href="https://www.arnoldpalmercountryclub.com/_files/ugd/dbad54_0a88a2fe5ddb43bdb026b14f640f75f5.pdf" target="_blank" rel="noreferrer">Dinner source</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const MENU_ITEMS = [
+      item("both", "Beginnings", "Crab Cakes", "19.99", "Crispy Jumbo Lump Crab Cakes, Black Garlic Truffle Aioli", "Crab cakes wear the black-garlic truffle coat."),
+      item("both", "Beginnings", "Wagyu Meatballs", "14.99", "Whiskey and Peach Glaze, Fresh Peach Chutney", "Wagyu gets the whiskey-peach shine, then peach chutney."),
+      item("both", "Beginnings", "Florida Orange Shrimp Cocktail", "14.99", "Citrus-Poached Jumbo Shrimp, Orange-Infused Cocktail Sauce", "Florida orange means citrus in the poach and the cocktail sauce."),
+      item("both", "Beginnings", "Steakhouse Onion Rings", "11.99", "Beer-Battered Onion Rings, Blue Cheese Fondue, Balsamic Drizzle", "Steakhouse rings bring beer batter, blue cheese, and balsamic."),
+      item("both", "Beginnings", "Seared Scallops", "20.99", "Jumbo Sea Scallops, Sweet Corn Puree, Crispy Prosciutto, Chives", "Scallops sit on sweet corn and get prosciutto crunch."),
+      item("both", "Beginnings", "Shrimp Deviled Eggs", "14.99", "Classic Deviled Eggs, Crispy Shrimp, Masago Caviar", "Deviled eggs go ocean-side with shrimp and masago."),
+      item("both", "Beginnings", "Sesame Seared Ahi Tuna", "16.99", "Peppercorn and Sesame Crust, Asian Slaw, Wonton Chips", "Ahi has the sesame crust, slaw, and wonton crunch."),
+      item("both", "Beginnings", "Classic Escargot", "15.99", "Burgundy Escargot, Garlic Herb Butter, Toasted Baguette", "Escargot is Burgundy, butter, baguette."),
+      item("both", "House Soup", "Lobster Bisque", "8.99", "Maine Lobster, Sherry", "Bisque is short and rich: Maine lobster plus sherry."),
+      item("both", "House Soup", "Baked French Onion", "7.99", "Roth Kase Swiss Cheese", "French onion gets the Roth Kase Swiss cap."),
+
+      item("lunch", "Greens", "House Salad", "9.99", "Spring Mix, Cherry Tomatoes, Red Onion, Cucumber, Poppyseed Honey Dijon Vinaigrette", "House is the clean spring mix salad with poppyseed honey dijon."),
+      item("lunch", "Greens", "Classic Caesar", "10.99", "Romaine Lettuce, House-Made Caesar Dressing, Asiago Cheese, Garlic Croutons", "Caesar is the romaine-Asiago-crouton classic."),
+      item("lunch", "Greens", "Wedge Salad", "12.99", "Iceberg Lettuce, Cherrywood-Smoked Bacon, Cherry Tomatoes, Red Onion, Roth Kase Blue Cheese Crumbles, Blue Cheese Dressing", "Wedge equals iceberg plus bacon plus double blue cheese."),
+      item("lunch", "Greens", "Strawberry Salad", "12.99", "Spring Mix, Fresh Strawberries, Candied Pecans, Crumbled Goat Cheese, Dates, Poppyseed Honey Dijon Vinaigrette", "Strawberry salad is sweet on sweet: berries, pecans, dates, honey dijon."),
+      item("lunch", "Greens", "Grilled Chicken Cobb", "16.99", "Grilled Chicken, Spring Mix, Cherrywood-Smoked Bacon, Shredded Cheddar, Avocado, Hard-Boiled Egg, Cherry Tomatoes, Scallions, Poppyseed Honey Dijon Vinaigrette", "Cobb has the protein parade: chicken, bacon, cheddar, avocado, egg."),
+      item("lunch", "Greens", "Harvest Salmon Salad", "21.99", "Grilled Salmon, Spring Mix, Crumbled Goat Cheese, Granny Smith Apples, Craisins, Candied Pecans, Cherry Tomatoes, Fig Balsamic Vinaigrette", "Harvest points to apple, craisin, pecan, and fig balsamic."),
+
+      item("lunch", "Handhelds", "Chimichurri Steak Sandwich", "21.99", "Chargrilled Sliced Steak, Peppadew Chimichurri, Pickled Red Onions, Fresh Arugula, Toasted Baguette", "Steak sandwich is bright: peppadew chimichurri and pickled red onion."),
+      item("lunch", "Handhelds", "The Real Reuben", "16.99", "Certified Angus Corned Beef Brisket, Broiled Swiss Cheese, Sauerkraut, Russian Dressing, Grilled Marble Rye", "Real Reuben is corned beef, Swiss, kraut, Russian, marble rye."),
+      item("lunch", "Handhelds", "Prime Rib French Dip", "17.99", "Slow-Roasted Prime Rib, Aged Provolone, Parmesan Roasted Garlic Aioli, Au Jus, Toasted Baguette", "French dip gets prime rib, provolone, garlic aioli, and au jus."),
+      item("lunch", "Handhelds", "Buttermilk Fried Chicken Sandwich", "15.99", "Buttermilk Fried Chicken, Cherrywood-Smoked Bacon, Local Honey, Mayo, House Dill Pickles, Brioche Bun", "Fried chicken is honey, bacon, pickles, brioche."),
+      item("lunch", "Handhelds", "Turkey Club", "14.99", "Oven-Roasted Turkey, Cherrywood-Smoked Bacon, Mayo, Lettuce, Tomato, Toasted Sourdough", "Club is turkey, bacon, mayo, lettuce, tomato, sourdough."),
+      item("lunch", "Handhelds", "Blueberry Chicken Salad", "13.99", "Chicken Salad, Fresh Blueberries, Celery, Candied Pecans, Lettuce, Tomato, Red Onion, Toasted Croissant", "Blueberry chicken salad lands on a toasted croissant."),
+      item("lunch", "Handhelds", "Chicken Pesto Wrap", "14.99", "Grilled Chicken Breast, Basil Pesto, Roasted Red Peppers, Spinach, Provolone, Sun-Dried Tomatoes, Flour Tortilla", "Pesto wrap: chicken, peppers, spinach, provolone, sun-dried tomatoes."),
+      item("lunch", "Handhelds", "Tempura Haddock Sandwich", "15.99", "Tempura-Style Beer-Battered Haddock, Cajun Remoulade, Lettuce, Tomato, Red Onion, Brioche Bun", "Haddock sandwich gets Cajun remoulade on brioche."),
+      item("lunch", "Handhelds", "Open-Faced Meatloaf Melt", "14.99", "House-Made Beef and Pork Meatloaf, Sweet Tomato Glaze, Melted Cheddar, Crispy Onion Straws, Grilled Sourdough", "Meatloaf melt is open-faced with cheddar and onion straws."),
+
+      item("lunch", "Prime Burgers", "Classic Cheeseburger", "14.99", "Tillamook Cheddar, Lettuce, Tomato, Red Onion", "Classic burger uses Tillamook cheddar."),
+      item("lunch", "Prime Burgers", "Mushroom Swiss Burger", "15.99", "Sauteed Mushrooms, Melted Swiss Cheese, Black Garlic Truffle Aioli", "Mushroom Swiss borrows the black garlic truffle flavor."),
+      item("lunch", "Prime Burgers", "Steakhouse Burger", "16.99", "Blue Cheese Fondue, Beer-Battered Onion Rings, Lettuce, Tomato", "Steakhouse burger stacks blue cheese fondue and onion rings."),
+      item("lunch", "Prime Burgers", "G.O.A.T. Burger", "17.99", "Goat Cheese Crumbles, Cherrywood-Smoked Bacon, Fresh Arugula, Caramelized Onions, Balsamic Glaze", "G.O.A.T. has goat cheese, bacon, arugula, onion, balsamic."),
+
+      item("lunch", "Comfort", "Tropical Ahi Bowl", "18.99", "Ponzu-Marinated Ahi Tuna, Herbed Rice, Pineapple, Avocado, Cucumber, Masago Caviar, Coconut Lime Crema, Toasted Sesame Seeds", "Tropical means pineapple, avocado, cucumber, coconut lime."),
+      item("lunch", "Comfort", "Peach Glazed Salmon Bowl", "22.99", "Peach Glazed Salmon, Herbed Rice, Braised Swiss Chard, Peach Salsa, Crispy Prosciutto", "Peach shows up twice: glaze and salsa."),
+      item("lunch", "Comfort", "Crispy Eggplant Napoleon", "17.99", "Crispy Eggplant, Herbed Goat Cheese, Roasted Mushrooms and Tomatoes, Sauteed Spinach, Parmesan Risotto, Balsamic Glaze", "Eggplant Napoleon layers goat cheese, mushrooms, spinach, risotto."),
+      item("lunch", "Comfort", "Fish and Chips", "23.99", "Tempura-Style Beer-Battered Haddock, Tartar Sauce, Seasoned Fries", "Fish and chips is haddock, tartar, fries."),
+      item("lunch", "Comfort", "Wild Mushroom Chicken", "22.99", "Sauteed Chicken Breast, Wild Mushrooms, Dijon White Wine Sauce, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Wild mushroom chicken is the Dijon white wine chicken."),
+      item("lunch", "Comfort", "Crispy Southern Fried Chicken", "24", "Orange Honey Drizzle, House-Made Sweet Potato Casserole, Braised Swiss Chard", "Southern fried chicken gets orange honey and sweet potato."),
+
+      item("dinner", "Greens", "House Salad", "5.99 / 9.99", "Spring Mix, Cherry Tomatoes, Red Onion, Cucumber, Poppyseed Honey Dijon Vinaigrette", "Dinner house salad has two prices and the poppyseed honey dijon."),
+      item("dinner", "Greens", "Classic Caesar", "6.99 / 10.99", "Romaine Lettuce, House-Made Caesar Dressing, Asiago Cheese, Garlic Croutons", "Dinner Caesar has side and full prices."),
+      item("dinner", "Greens", "Wedge Salad", "12.99", "Iceberg Lettuce, Cherrywood-Smoked Bacon, Cherry Tomatoes, Red Onion, Roth Kase Blue Cheese Crumbles, Blue Cheese Dressing", "Wedge stays bacon plus blue cheese."),
+      item("dinner", "Greens", "Harvest Salmon Salad", "21.99", "Grilled Salmon, Spring Mix, Crumbled Goat Cheese, Granny Smith Apples, Craisins, Candied Pecans, Cherry Tomatoes, Fig Balsamic Vinaigrette", "Harvest salmon is apple, craisin, pecan, fig balsamic."),
+
+      item("dinner", "Handhelds", "Steakhouse Burger", "17.99", "Half-Pound Prime Angus Burger, Blue Cheese Fondue, Beer-Battered Onion Rings, Lettuce, Tomato", "Dinner steakhouse burger is 17.99 with prime Angus."),
+      item("dinner", "Handhelds", "Prime Rib French Dip", "17.99", "Slow-Roasted Prime Rib, Aged Provolone, Parmesan Roasted Garlic Aioli, Toasted Baguette, Au Jus", "French dip keeps the au jus and baguette."),
+      item("dinner", "Handhelds", "Chimichurri Steak Sandwich", "21.99", "Chargrilled Sliced Steak, Peppadew Chimichurri, Pickled Red Onions, Fresh Arugula, Toasted Baguette", "Chimichurri steak sandwich is dinner and lunch at 21.99."),
+
+      item("dinner", "Steaks and Chops", "6 oz. Filet Mignon", "38.99", "Whipped Buttermilk Potatoes, Grilled Asparagus", "Filet is six ounces with potatoes and asparagus."),
+      item("dinner", "Steaks and Chops", "14 oz. Snake River Farms Prime Ribeye", "47.99", "Whipped Buttermilk Potatoes, Grilled Asparagus", "Ribeye is the big Snake River Farms steak."),
+      item("dinner", "Steaks and Chops", "16 oz. Bone-In New York Strip", "38.99", "Baked Potato, Chef's Seasonal Vegetables", "New York strip gets baked potato and seasonal vegetables."),
+      item("dinner", "Steaks and Chops", "Tenderloin Tips", "28.99", "Bourbon Glaze, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Tips are tenderloin plus bourbon glaze."),
+      item("dinner", "Chateau for Two", "Chateau for Two", "110", "Two House Salads to begin, followed by Chateaubriand, Port Wine Demi-Glace, Whipped Buttermilk Potatoes, Grilled Asparagus", "Chateau starts with two house salads, then Chateaubriand."),
+
+      item("dinner", "Pasta", "Bison Bolognese", "21.99", "Slow-Cooked Bison Bolognese, Rigatoni, Creamy Pesto Ricotta", "Bison bolognese gets rigatoni and pesto ricotta."),
+      item("dinner", "Pasta", "Short Rib Ravioli", "23.99", "Tender Shredded Short Rib, Cheese Ravioli, Roasted Garlic Cream Sauce, Parmesan", "Short rib hides inside ravioli with roasted garlic cream."),
+      item("dinner", "Pasta", "Linguine and Clams", "18.99", "Fresh Clams, Roasted Garlic, Shallots, White Wine Lemon Butter Sauce, Fresh Herbs, Linguine, Toasted Baguette", "Clams get garlic, shallots, white wine lemon butter."),
+      item("dinner", "Pasta", "Chicken Rockefeller", "21.99", "Pan-Seared Chicken Breast, Cherrywood-Smoked Bacon, Creamy Spinach, Roasted Garlic, Parmesan, Mozzarella, Buttery Herb Breadcrumbs, Linguine", "Rockefeller means creamy spinach, bacon, garlic, cheese, breadcrumbs."),
+
+      item("dinner", "Sea", "New England Halibut", "32.99", "Old Bay Seasoned Halibut, New England Clam Cream Sauce, Herbed Rice, Braised Swiss Chard", "New England halibut gets clam cream sauce."),
+      item("dinner", "Sea", "Lobster and Shrimp Wellington", "37.99", "Lobster and Crab, Golden Puff Pastry, Lobster Cream Sauce, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Wellington means puff pastry and lobster cream."),
+      item("dinner", "Sea", "Maple Bourbon Salmon", "23.99", "Maple Bourbon-Glazed Salmon, House-Made Sweet Potato Casserole, Grilled Asparagus", "Maple bourbon salmon pairs with sweet potato casserole."),
+      item("dinner", "Sea", "Crab Stuffed Grouper", "29.99", "Florida Grouper Stuffed with Crab, Spinach, and Herbs, Seafood Veloute, Parmesan Risotto, Grilled Asparagus", "Grouper is stuffed with crab, spinach, and herbs."),
+      item("dinner", "Sea", "Fish and Chips", "23.99", "Tempura-Style Beer-Battered Haddock, Tartar Sauce, Seasoned Fries", "Dinner fish and chips matches lunch comfort at 23.99."),
+
+      item("dinner", "Comfort", "Tomato Glazed Meatloaf", "18.99", "House-Made Beef and Pork Meatloaf, Sweet Tomato Glaze, Crispy Onion Straws, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Dinner meatloaf is tomato glazed with onion straws."),
+      item("dinner", "Comfort", "Wild Mushroom Chicken", "22.99", "Sauteed Chicken Breast, Wild Mushrooms, Dijon White Wine Sauce, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Same Dijon white wine chicken at dinner."),
+      item("dinner", "Comfort", "Crispy Eggplant Napoleon", "18.99", "Crispy Eggplant, Herbed Goat Cheese, Roasted Mushrooms and Tomatoes, Sauteed Spinach, Parmesan Risotto, Balsamic Glaze", "Dinner eggplant is 18.99, one dollar more than lunch."),
+      item("dinner", "Comfort", "Apple Cobbler Bone-In Pork Chop", "29.99", "Bone-In Pork Chop, Apple Cobbler Glaze, Whipped Buttermilk Potatoes, Grilled Asparagus", "Pork chop gets the apple cobbler glaze."),
+      item("dinner", "Comfort", "Honey Dijon Pork Ribeye", "23.99", "Tender Pork Ribeye, Savory Honey Dijon Glaze, Whipped Buttermilk Potatoes, Chef's Seasonal Vegetables", "Pork ribeye carries the savory honey Dijon glaze.")
+    ];
+
+    const RULE_QUESTIONS = [
+      q("rule-poppyseed-fill", "Complete the dressing: Poppyseed <span class=\"blank-text\">_ _</span> Vinaigrette.", "Honey Dijon", ["Honey Dijon", "Fig Balsamic", "White Wine", "Coconut Lime"], "Poppy + honey + Dijon: seed, sweet, mustard. This appears on the house salad and several lunch greens.", "Lunch and dinner greens", "rules", "blank"),
+      q("rule-lunch-pairing-price", "What is the lunch Palmer Pairings price for any two eligible items?", "13.99", ["13.99", "12.99", "14.99", "16.99"], "Pairings are a lunch shortcut: two items, one price, 13.99.", "Lunch Palmer Pairings", "rules"),
+      q("rule-lunch-pairing-sides", "Which set belongs in the lunch Palmer Pairings soups and side salads group?", "Lobster Bisque, Baked French Onion, Caesar, House, Potato Salad", ["Lobster Bisque, Baked French Onion, Caesar, House, Potato Salad", "Wedge, Strawberry, Harvest Salmon, House, Caesar", "Fish and Chips, Caesar, House, Potato Salad, Lobster Bisque", "House, Wedge, Baked Potato, Caesar, Turkey Club"], "The pairings list is two buckets: soup or side salad, then half sandwiches.", "Lunch Palmer Pairings", "rules"),
+      q("rule-lunch-pairing-sandwiches", "Which half sandwiches are eligible for the lunch Palmer Pairings?", "Prime Rib French Dip, Turkey Club, The Real Reuben, Blueberry Chicken Salad", ["Prime Rib French Dip, Turkey Club, The Real Reuben, Blueberry Chicken Salad", "Turkey Club, Chicken Pesto Wrap, Tempura Haddock, The Real Reuben", "Steakhouse Burger, Prime Rib French Dip, Turkey Club, Chimichurri Steak", "Blueberry Chicken Salad, Buttermilk Fried Chicken, Open-Faced Meatloaf, Turkey Club"], "Four half sandwiches: French Dip, Turkey Club, Reuben, Blueberry Chicken Salad.", "Lunch Palmer Pairings", "rules"),
+      q("rule-lunch-handheld-side", "Lunch handhelds and prime burgers are served with which side choices?", "Seasoned Fries, Potato Salad, or House Chips", ["Seasoned Fries, Potato Salad, or House Chips", "Baked Potato, Grilled Asparagus, or House Chips", "Herbed Rice, Potato Salad, or Caesar", "Seasoned Fries, Sweet Potato Casserole, or House Salad"], "Lunch sandwiches and burgers share the same three base sides.", "Lunch handhelds", "rules"),
+      q("rule-dinner-handheld-side", "Dinner handhelds are served with which side choices?", "Seasoned Fries, Potato Salad, or House Chips", ["Seasoned Fries, Potato Salad, or House Chips", "Baked Potato, Chef's Vegetables, or House Chips", "Whipped Potatoes, Asparagus, or Fries", "Herbed Rice, Swiss Chard, or Potato Salad"], "Dinner handhelds keep the same base side trio.", "Dinner handhelds", "rules"),
+      q("rule-lunch-upcharges", "What are the lunch upcharges for substituting a side salad or gluten-free bun?", "Side salad +1.99 and GF bun +1.99", ["Side salad +1.99 and GF bun +1.99", "Side salad +2 and GF bun +2", "Side salad +3 and GF bun +2", "Side salad +1 and GF bun +1.99"], "Lunch uses the 1.99 upcharge language.", "Lunch handhelds and burgers", "rules"),
+      q("rule-dinner-upcharges", "What are the dinner upcharges for substituting a side salad or gluten-free bun?", "Side salad +2 and GF bun +2", ["Side salad +2 and GF bun +2", "Side salad +1.99 and GF bun +1.99", "Side salad +2 and GF bun +1.99", "Side salad +3 and GF bun +2"], "Dinner rounds the upcharges to +2.", "Dinner handhelds", "rules"),
+      q("rule-protein-addons", "Which protein add-ons are listed for the greens?", "Grilled Chicken 8, Grilled Shrimp 8, Grilled Salmon 12, Seared Ahi Tuna 10, Steak 14", ["Grilled Chicken 8, Grilled Shrimp 8, Grilled Salmon 12, Seared Ahi Tuna 10, Steak 14", "Chicken 6, Shrimp 8, Salmon 12, Ahi 12, Steak 14", "Chicken 8, Shrimp 10, Salmon 12, Crab 14, Steak 14", "Chicken 8, Shrimp 8, Grouper 12, Ahi 10, Steak 16"], "Remember 8, 8, 12, 10, 14: chicken and shrimp match, salmon climbs, ahi is 10, steak tops.", "Greens add-ons", "rules"),
+      q("rule-steaks-aging", "How are the dinner beef selections described?", "Hand-cut in house, aged for 28 days, and Cherrywood fire-grilled", ["Hand-cut in house, aged for 28 days, and Cherrywood fire-grilled", "USDA Prime, wet-aged 14 days, and cast-iron seared", "Dry-aged 45 days, herb-crusted, and oak-smoked", "Hand-cut in house, marinated overnight, and flame-broiled"], "Steak line: hand-cut, 28 days, Cherrywood fire.", "Dinner steaks and chops", "rules"),
+      q("rule-steak-garnish", "All dinner steaks and chops are served with what?", "Port-Braised Pearl Onions", ["Port-Braised Pearl Onions", "Garlic Herb Butter", "Fig Balsamic Vinaigrette", "Crispy Onion Straws"], "The steak garnish is port-braised pearl onions.", "Dinner steaks and chops", "rules"),
+      q("rule-chateau", "What starts the Chateau for Two?", "Two House Salads", ["Two House Salads", "Two Lobster Bisques", "Two Caesar Salads", "Two Crab Cakes"], "Chateau starts light: two house salads before Chateaubriand.", "Dinner Chateau for Two", "rules"),
+      q("rule-raw-note", "Which menu sections include items marked with the raw or undercooked advisory?", "Ahi tuna, burgers, steak sandwich, and steak items", ["Ahi tuna, burgers, steak sandwich, and steak items", "Only soups and salads", "Only desserts", "Only vegetarian dishes"], "Stars cluster around seared ahi, burgers, steak sandwich, and steaks.", "Menu advisory", "rules")
+    ];
+
+    const PRODUCTION_API_ORIGIN = "https://palmer-menu-quiz-2026.seansandwich22.chatgpt.site";
+    const SCORE_API_BASE = location.hostname === "alphapoptart.github.io" ? PRODUCTION_API_ORIGIN : "";
+    const GITHUB_PAGE_BASE = location.hostname === "alphapoptart.github.io" ? "/palmer-menu-quiz/" : "/";
+
+    const state = {
+      round: [],
+      index: 0,
+      score: 0,
+      streak: 0,
+      answered: false,
+      lastResult: null,
+      activeQuestion: null,
+      roundSettings: null,
+      roundStartedAt: 0,
+      playerName: "",
+      storage: loadStorage()
+    };
+
+    const els = {
+      quizView: document.querySelector("#quizView"),
+      scoresView: document.querySelector("#scoresView"),
+      quizNavLink: document.querySelector("#quizNavLink"),
+      scoresNavLink: document.querySelector("#scoresNavLink"),
+      serverNameInput: document.querySelector("#serverNameInput"),
+      nameHint: document.querySelector("#nameHint"),
+      menuSelect: document.querySelector("#menuSelect"),
+      typeSelect: document.querySelector("#typeSelect"),
+      countSelect: document.querySelector("#countSelect"),
+      startButton: document.querySelector("#startButton"),
+      quizKicker: document.querySelector("#quizKicker"),
+      quizTitle: document.querySelector("#quiz-title"),
+      questionText: document.querySelector("#questionText"),
+      questionSub: document.querySelector("#questionSub"),
+      options: document.querySelector("#options"),
+      fillForm: document.querySelector("#fillForm"),
+      fillAnswer: document.querySelector("#fillAnswer"),
+      feedback: document.querySelector("#feedback"),
+      progressPill: document.querySelector("#progressPill"),
+      scorePill: document.querySelector("#scorePill"),
+      streakPill: document.querySelector("#streakPill"),
+      progressBar: document.querySelector("#progressBar"),
+      bestScore: document.querySelector("#bestScore"),
+      missedCount: document.querySelector("#missedCount"),
+      roundsTaken: document.querySelector("#roundsTaken"),
+      avgScore: document.querySelector("#avgScore"),
+      practiceMissedButton: document.querySelector("#practiceMissedButton"),
+      freshRoundButton: document.querySelector("#freshRoundButton"),
+      resetButton: document.querySelector("#resetButton"),
+      coachNote: document.querySelector("#coachNote"),
+      missList: document.querySelector("#missList"),
+      historyList: document.querySelector("#historyList"),
+      searchInput: document.querySelector("#searchInput"),
+      menuGrid: document.querySelector("#menuGrid"),
+      scoreSearchInput: document.querySelector("#scoreSearchInput"),
+      refreshScoresButton: document.querySelector("#refreshScoresButton"),
+      scoreBoardStatus: document.querySelector("#scoreBoardStatus"),
+      remotePlayers: document.querySelector("#remotePlayers"),
+      remoteAttempts: document.querySelector("#remoteAttempts"),
+      remoteBest: document.querySelector("#remoteBest"),
+      remoteAverage: document.querySelector("#remoteAverage"),
+      leaderboardList: document.querySelector("#leaderboardList"),
+      latestScoresList: document.querySelector("#latestScoresList")
+    };
+
+    function item(menu, section, name, price, description, cue) {
+      const id = `${menu}-${section}-${name}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      return { id, menu, section, name, price, description, cue };
+    }
+
+    function q(id, prompt, answer, options, cue, source, category, mode = "choice") {
+      return { id, prompt, answer, options, cue, source, category, mode };
+    }
+
+    function generateQuestions() {
+      const questions = [...RULE_QUESTIONS];
+      const sections = unique(MENU_ITEMS.map((entry) => entry.section));
+      const prices = unique(MENU_ITEMS.map((entry) => entry.price));
+
+      MENU_ITEMS.forEach((entry) => {
+        questions.push(q(
+          `price-${entry.id}`,
+          `What is the listed price for ${entry.name}?`,
+          entry.price,
+          distractors(entry.price, prices, 3),
+          `${entry.cue} Price check: ${entry.name} is ${entry.price}.`,
+          sourceLabel(entry),
+          "prices"
+        ));
+
+        questions.push(q(
+          `section-${entry.id}`,
+          `Which menu section is ${entry.name} in?`,
+          entry.section,
+          distractors(entry.section, sections, 3),
+          `${entry.name} lives in ${entry.section}. ${entry.cue}`,
+          sourceLabel(entry),
+          "sections"
+        ));
+
+        questions.push(q(
+          `desc-${entry.id}`,
+          `Which description belongs to ${entry.name}?`,
+          entry.description,
+          distractors(entry.description, MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.description), 3),
+          entry.cue,
+          sourceLabel(entry),
+          "ingredients"
+        ));
+
+        const signature = signaturePhrase(entry.description);
+        if (signature) {
+          questions.push(q(
+            `signature-${entry.id}`,
+            `Which item includes ${signature}?`,
+            entry.name,
+            distractors(entry.name, MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.name), 3),
+            entry.cue,
+            sourceLabel(entry),
+            "ingredients"
+          ));
+        }
+      });
+
+      return questions;
+    }
+
+    const ALL_QUESTIONS = generateQuestions();
+
+    function signaturePhrase(description) {
+      const parts = description.split(",").map((part) => part.trim()).filter(Boolean);
+      const strong = parts.find((part) => /Aioli|Chutney|Fondue|Balsamic|Masago|Caviar|Poppyseed|Fig|Chimichurri|Remoulade|Bourbon|Rockefeller|Veloute|Wellington|Dijon|Cobbler|Coconut|Prosciutto|Pesto|Lobster Cream|Clam Cream/i.test(part));
+      return strong || parts[1] || parts[0] || "";
+    }
+
+    function sourceLabel(entry) {
+      if (entry.menu === "both") return "Lunch and dinner";
+      return `${capitalize(entry.menu)} ${entry.section}`;
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function unique(values) {
+      return [...new Set(values)];
+    }
+
+    function distractors(answer, pool, count) {
+      const choices = shuffle(unique(pool).filter((value) => value !== answer)).slice(0, count);
+      return shuffle([answer, ...choices]);
+    }
+
+    function shuffle(list) {
+      const copy = [...list];
+      for (let index = copy.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+      }
+      return copy;
+    }
+
+    function loadStorage() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("palmerMenuQuiz.v1") || "{}");
+        return {
+          history: Array.isArray(saved.history) ? saved.history.slice(0, 20) : [],
+          missed: saved.missed && typeof saved.missed === "object" ? saved.missed : {},
+          playerName: typeof saved.playerName === "string" ? saved.playerName : ""
+        };
+      } catch {
+        return { history: [], missed: {}, playerName: "" };
+      }
+    }
+
+    function saveStorage() {
+      localStorage.setItem("palmerMenuQuiz.v1", JSON.stringify(state.storage));
+    }
+
+    function cleanName(value) {
+      return String(value || "").replace(/\s+/g, " ").trim().slice(0, 60);
+    }
+
+    function apiUrl(path) {
+      return `${SCORE_API_BASE}${path}`;
+    }
+
+    function startRound(overrides = {}) {
+      const playerName = cleanName(overrides.playerName || els.serverNameInput.value);
+      if (!playerName) {
+        els.nameHint.textContent = "Enter a server name first so the score board is readable.";
+        els.serverNameInput.focus();
+        return;
+      }
+      state.playerName = playerName;
+      state.storage.playerName = playerName;
+      saveStorage();
+      els.serverNameInput.value = playerName;
+      els.nameHint.textContent = "";
+
+      const menu = overrides.menu || els.menuSelect.value;
+      const type = overrides.type || els.typeSelect.value;
+      const requestedCount = overrides.count || els.countSelect.value;
+      let pool = filterQuestions(menu, type);
+
+      if (menu === "missed") {
+        pool = missedQuestions();
+      }
+
+      if (!pool.length) {
+        pool = filterQuestions("mixed", "all");
+      }
+
+      const count = requestedCount === "all" ? pool.length : Math.min(Number(requestedCount), pool.length);
+      state.round = shuffle(pool).slice(0, count);
+      state.index = 0;
+      state.score = 0;
+      state.streak = 0;
+      state.answered = false;
+      state.lastResult = null;
+      state.roundStartedAt = Date.now();
+      state.roundSettings = { menu, type, requestedCount };
+      els.quizKicker.textContent = menu === "missed" ? "Review round" : "Active round";
+      els.quizTitle.textContent = `${playerName}: ${count} ${type === "all" ? "menu" : type} questions`;
+      renderQuestion();
+      updateSummary();
+    }
+
+    function filterQuestions(menu, type) {
+      return ALL_QUESTIONS.filter((question) => {
+        const matchesType = type === "all" || question.category === type;
+        if (!matchesType) return false;
+        if (menu === "mixed") return true;
+        if (menu === "missed") return false;
+        const source = question.source.toLowerCase();
+        return source.includes(menu) || source.includes("lunch and dinner") || source.includes("greens add-ons") || source.includes("menu advisory");
+      });
+    }
+
+    function missedQuestions() {
+      return Object.keys(state.storage.missed)
+        .map((id) => ALL_QUESTIONS.find((question) => question.id === id))
+        .filter(Boolean);
+    }
+
+    function renderQuestion() {
+      const question = state.round[state.index];
+      state.activeQuestion = question;
+      state.answered = false;
+      els.feedback.className = "feedback";
+      els.feedback.innerHTML = "";
+      els.options.innerHTML = "";
+      els.fillAnswer.value = "";
+
+      if (!question) {
+        finishRound();
+        return;
+      }
+
+      els.questionText.innerHTML = question.prompt;
+      els.questionSub.textContent = `${question.source} - ${question.categoryLabel || labelCategory(question.category)}`;
+      els.progressPill.textContent = `${state.index + 1} / ${state.round.length}`;
+      els.scorePill.textContent = `Score ${state.score}`;
+      els.streakPill.textContent = `Streak ${state.streak}`;
+      els.progressBar.style.width = `${(state.index / state.round.length) * 100}%`;
+
+      if (question.mode === "blank") {
+        els.fillForm.hidden = false;
+        els.fillAnswer.focus({ preventScroll: true });
+        return;
+      }
+
+      els.fillForm.hidden = true;
+      question.options.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "option-button";
+        button.textContent = option;
+        button.addEventListener("click", () => answerQuestion(option, button));
+        els.options.append(button);
+      });
+    }
+
+    function labelCategory(category) {
+      const labels = {
+        ingredients: "ingredients",
+        prices: "price",
+        sections: "section",
+        rules: "service rule"
+      };
+      return labels[category] || "menu detail";
+    }
+
+    function answerQuestion(answer, button = null) {
+      if (state.answered || !state.activeQuestion) return resultSnapshot();
+
+      const question = state.activeQuestion;
+      const correct = normalize(answer) === normalize(question.answer);
+      state.answered = true;
+      state.lastResult = { correct, answer, expected: question.answer, questionId: question.id };
+
+      if (correct) {
+        state.score += 1;
+        state.streak += 1;
+        updateMiss(question, true);
+      } else {
+        state.streak = 0;
+        updateMiss(question, false);
+      }
+
+      [...els.options.querySelectorAll("button")].forEach((optionButton) => {
+        optionButton.disabled = true;
+        if (normalize(optionButton.textContent) === normalize(question.answer)) {
+          optionButton.classList.add("correct");
+        } else if (button === optionButton) {
+          optionButton.classList.add("wrong");
+        }
+      });
+
+      renderFeedback(correct, answer);
+      updateSummary();
+      return resultSnapshot();
+    }
+
+    function normalize(value) {
+      return String(value || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9.]+/g, " ").trim();
+    }
+
+    function updateMiss(question, correct) {
+      const existing = state.storage.missed[question.id] || {
+        id: question.id,
+        misses: 0,
+        clears: 0,
+        prompt: stripHtml(question.prompt),
+        answer: question.answer,
+        cue: question.cue,
+        source: question.source
+      };
+
+      if (correct) {
+        existing.clears = (existing.clears || 0) + 1;
+        if (existing.clears >= 2) {
+          delete state.storage.missed[question.id];
+        } else if (state.storage.missed[question.id]) {
+          state.storage.missed[question.id] = existing;
+        }
+      } else {
+        existing.misses = (existing.misses || 0) + 1;
+        existing.clears = 0;
+        existing.lastMissedAt = Date.now();
+        state.storage.missed[question.id] = existing;
+      }
+
+      saveStorage();
+    }
+
+    function stripHtml(value) {
+      const template = document.createElement("template");
+      template.innerHTML = value;
+      return template.content.textContent || "";
+    }
+
+    function renderFeedback(correct, answer) {
+      const question = state.activeQuestion;
+      els.feedback.className = `feedback show ${correct ? "good" : "bad"}`;
+      const result = correct ? "Correct" : "Study this one";
+      const answerLine = correct
+        ? `Answer: ${question.answer}`
+        : `You chose: ${answer || "blank"}. Correct answer: ${question.answer}`;
+      els.feedback.innerHTML = `
+        <strong>${result}</strong>
+        <p>${answerLine}</p>
+        <p><b>Memory cue:</b> ${question.cue}</p>
+        <div class="feedback-actions">
+          <button class="primary-button next-button" type="button" id="nextQuestionButton">${state.index + 1 >= state.round.length ? "Finish Round" : "Next Question"}</button>
+          <button class="small-button" type="button" id="sayBackButton">Show Say-Back</button>
+        </div>
+      `;
+      document.querySelector("#nextQuestionButton").addEventListener("click", nextQuestion);
+      document.querySelector("#sayBackButton").addEventListener("click", () => {
+        els.feedback.querySelector("#sayBackButton").replaceWith(sayBackNode(question));
+      });
+    }
+
+    function sayBackNode(question) {
+      const node = document.createElement("p");
+      node.innerHTML = `<b>Say-back:</b> ${stripHtml(question.prompt)} Answer: ${question.answer}.`;
+      return node;
+    }
+
+    function nextQuestion() {
+      if (!state.answered) return;
+      state.index += 1;
+      if (state.index >= state.round.length) {
+        finishRound();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function finishRound() {
+      const total = state.round.length || 1;
+      const percent = Math.round((state.score / total) * 100);
+      state.storage.history.unshift({
+        playerName: state.playerName,
+        score: state.score,
+        total,
+        percent,
+        date: new Date().toISOString()
+      });
+      state.storage.history = state.storage.history.slice(0, 20);
+      saveStorage();
+
+      els.quizKicker.textContent = "Round complete";
+      els.quizTitle.textContent = `${percent}% score`;
+      els.questionText.textContent = `You scored ${state.score} out of ${total}.`;
+      els.questionSub.textContent = scoreMessage(percent);
+      els.options.innerHTML = "";
+      els.fillForm.hidden = true;
+      els.feedback.className = "feedback show good";
+      els.feedback.innerHTML = `
+        <strong>${percent >= 85 ? "Service ready" : "Keep drilling"}</strong>
+        <p>${missedQuestions().length ? "Practice missed items next to turn weak spots into automatic recall." : "No missed cards left in the study stack."}</p>
+        <p id="submitStatus">Submitting ${state.playerName}'s score to the manager board...</p>
+        <div class="feedback-actions">
+          <button class="primary-button next-button" type="button" id="repeatRoundButton">Another Round</button>
+          <button class="small-button" type="button" id="missedRoundButton">Practice Missed</button>
+        </div>
+      `;
+      document.querySelector("#repeatRoundButton").addEventListener("click", () => startRound());
+      document.querySelector("#missedRoundButton").addEventListener("click", () => {
+        els.menuSelect.value = "missed";
+        startRound({ menu: "missed", type: "all", count: "10" });
+      });
+      els.progressPill.textContent = `${total} / ${total}`;
+      els.scorePill.textContent = `Score ${state.score}`;
+      els.streakPill.textContent = `Streak ${state.streak}`;
+      els.progressBar.style.width = "100%";
+      updateSummary();
+      submitScore(total, percent);
+    }
+
+    async function submitScore(total, percent) {
+      const submitStatus = document.querySelector("#submitStatus");
+      const durationSeconds = state.roundStartedAt ? Math.max(0, Math.round((Date.now() - state.roundStartedAt) / 1000)) : null;
+      const payload = {
+        playerName: state.playerName,
+        score: state.score,
+        total,
+        percent,
+        menuFocus: state.roundSettings?.menu || els.menuSelect.value,
+        questionType: state.roundSettings?.type || els.typeSelect.value,
+        roundLength: String(state.roundSettings?.requestedCount || els.countSelect.value),
+        missedCount: missedQuestions().length,
+        durationSeconds,
+        questionIds: state.round.map((question) => question.id)
+      };
+
+      try {
+        const response = await fetch(apiUrl("/api/scores"), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Score could not be saved.");
+        if (submitStatus) submitStatus.textContent = "Score saved to the manager board.";
+        if (isScoresRoute()) loadScoreBoard();
+      } catch (error) {
+        if (submitStatus) submitStatus.textContent = `Score stayed local because the shared board is unavailable: ${error.message}`;
+      }
+    }
+
+    function scoreMessage(percent) {
+      if (percent >= 95) return "Excellent recall. You are ready for guest questions and table-side confidence.";
+      if (percent >= 85) return "Strong round. One missed-item pass should lock in the edges.";
+      if (percent >= 70) return "Solid base. Focus on missed cards and prices next.";
+      return "Build the foundations first: sections, signature ingredients, and prices.";
+    }
+
+    function updateSummary() {
+      const history = state.storage.history;
+      const best = history.length ? Math.max(...history.map((entry) => entry.percent)) : 0;
+      const avg = history.length ? Math.round(history.reduce((sum, entry) => sum + entry.percent, 0) / history.length) : 0;
+      const missed = Object.values(state.storage.missed);
+      els.bestScore.textContent = `${best}%`;
+      els.avgScore.textContent = `${avg}%`;
+      els.roundsTaken.textContent = history.length;
+      els.missedCount.textContent = missed.length;
+      els.coachNote.textContent = missed.length
+        ? `${missed.length} cards need another look. The most-missed cards appear first.`
+        : "No missed items yet. A wrong answer will add a cue here.";
+      renderMisses(missed);
+      renderHistory(history);
+    }
+
+    function renderMisses(missed) {
+      els.missList.innerHTML = "";
+      missed
+        .sort((a, b) => (b.misses || 0) - (a.misses || 0))
+        .slice(0, 6)
+        .forEach((entry) => {
+          const node = document.createElement("div");
+          node.className = "miss-item";
+          node.innerHTML = `<b>${entry.answer}</b><p>${entry.cue}</p><p>${entry.source} - missed ${entry.misses || 1} time${(entry.misses || 1) === 1 ? "" : "s"}</p>`;
+          els.missList.append(node);
+        });
+    }
+
+    function renderHistory(history) {
+      els.historyList.innerHTML = "";
+      if (!history.length) {
+        els.historyList.innerHTML = "<p class=\"side-note\">No completed rounds yet.</p>";
+        return;
+      }
+      history.slice(0, 7).forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = "history-row";
+        row.innerHTML = `<span>${new Date(entry.date).toLocaleDateString([], { month: "short", day: "numeric" })}</span><b>${entry.percent}% (${entry.score}/${entry.total})</b>`;
+        els.historyList.append(row);
+      });
+    }
+
+    function renderStudyGuide() {
+      const query = normalize(els.searchInput.value);
+      const items = MENU_ITEMS.filter((entry) => {
+        if (!query) return true;
+        return normalize(`${entry.menu} ${entry.section} ${entry.name} ${entry.price} ${entry.description}`).includes(query);
+      });
+
+      els.menuGrid.innerHTML = "";
+      items.forEach((entry) => {
+        const card = document.createElement("article");
+        card.className = "menu-card";
+        card.innerHTML = `
+          <div>
+            <h3>${entry.name}</h3>
+            <div class="meta">
+              <span class="pill">${sourceLabel(entry)}</span>
+              <span class="pill">${entry.price}</span>
+            </div>
+          </div>
+          <p>${entry.description}</p>
+          <p><b>Memory:</b> ${entry.cue}</p>
+        `;
+        els.menuGrid.append(card);
+      });
+    }
+
+    function isScoresRoute() {
+      return location.pathname.replace(/\/+$/, "").endsWith("/scores") || new URLSearchParams(location.search).get("view") === "scores";
+    }
+
+    function renderRoute() {
+      const scoreRoute = isScoresRoute();
+      els.quizView.hidden = scoreRoute;
+      els.scoresView.hidden = !scoreRoute;
+      document.title = scoreRoute ? "Palmer Menu Scores" : "Palmer Menu Quiz";
+      if (scoreRoute) loadScoreBoard();
+    }
+
+    async function loadScoreBoard() {
+      const search = cleanName(els.scoreSearchInput.value);
+      els.scoreBoardStatus.textContent = "Loading submitted scores...";
+      try {
+        const response = await fetch(apiUrl(`/api/scores?limit=100&search=${encodeURIComponent(search)}`), {
+          headers: { accept: "application/json" }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Scores could not be loaded.");
+        renderScoreBoard(data);
+      } catch (error) {
+        els.scoreBoardStatus.textContent = `Score board unavailable: ${error.message}`;
+        renderScoreBoard({ summary: {}, leaderboard: [], latest: [] });
+      }
+    }
+
+    function renderScoreBoard(data) {
+      const summary = data.summary || {};
+      const leaderboard = Array.isArray(data.leaderboard) ? data.leaderboard : [];
+      const latest = Array.isArray(data.latest) ? data.latest : [];
+      els.remotePlayers.textContent = summary.players || 0;
+      els.remoteAttempts.textContent = summary.attempts || 0;
+      els.remoteBest.textContent = `${summary.bestPercent || 0}%`;
+      els.remoteAverage.textContent = `${summary.avgPercent || 0}%`;
+      els.scoreBoardStatus.textContent = latest.length
+        ? "Scores are sorted by strongest best score and newest attempts."
+        : "No submitted scores yet.";
+
+      els.leaderboardList.innerHTML = leaderboard.length ? "" : "<p class=\"side-note\">No server scores match this search.</p>";
+      leaderboard.forEach((entry, index) => {
+        const row = document.createElement("div");
+        row.className = "score-row";
+        row.innerHTML = `
+          <div>
+            <b>${index + 1}. ${escapeHtml(entry.player_name)}</b>
+            <p>${entry.rounds} round${Number(entry.rounds) === 1 ? "" : "s"} - average ${Number(entry.avg_percent || 0)}% - last ${formatDate(entry.last_played)}</p>
+          </div>
+          <span class="score-percent">${entry.best_percent || 0}%</span>
+        `;
+        els.leaderboardList.append(row);
+      });
+
+      els.latestScoresList.innerHTML = latest.length ? "" : "<p class=\"side-note\">Finished rounds will appear here.</p>";
+      latest.forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = "score-row";
+        row.innerHTML = `
+          <div>
+            <b>${escapeHtml(entry.player_name)}</b>
+            <p>${entry.score}/${entry.total} - ${labelMenu(entry.menu_focus)} - ${labelType(entry.question_type)} - ${formatDate(entry.created_at)}</p>
+            <p>${entry.missed_count} missed cards after the round${entry.duration_seconds ? ` - ${formatDuration(entry.duration_seconds)}` : ""}</p>
+          </div>
+          <span class="score-percent">${entry.percent}%</span>
+        `;
+        els.latestScoresList.append(row);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function labelMenu(value) {
+      return {
+        mixed: "Lunch and dinner",
+        lunch: "Lunch",
+        dinner: "Dinner",
+        missed: "Missed review"
+      }[value] || "Menu";
+    }
+
+    function labelType(value) {
+      return {
+        all: "all details",
+        ingredients: "ingredients",
+        prices: "prices",
+        sections: "sections",
+        rules: "service rules"
+      }[value] || "details";
+    }
+
+    function formatDate(value) {
+      if (!value) return "unknown date";
+      return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    }
+
+    function formatDuration(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainder = seconds % 60;
+      if (!minutes) return `${remainder}s`;
+      return `${minutes}m ${remainder}s`;
+    }
+
+    function resetAll() {
+      if (!window.confirm("Reset local scores and missed-item cards?")) return;
+      state.storage = { history: [], missed: {}, playerName: state.playerName };
+      saveStorage();
+      updateSummary();
+    }
+
+    function resultSnapshot() {
+      return {
+        score: state.score,
+        total: state.round.length,
+        index: state.index,
+        answered: state.answered,
+        lastResult: state.lastResult
+      };
+    }
+
+    els.quizNavLink.href = GITHUB_PAGE_BASE;
+    els.scoresNavLink.href = `${GITHUB_PAGE_BASE}scores/`;
+    state.playerName = cleanName(state.storage.playerName);
+    els.serverNameInput.value = state.playerName;
+
+    els.startButton.addEventListener("click", () => startRound());
+    els.freshRoundButton.addEventListener("click", () => startRound({ menu: "mixed", type: "all", count: "10" }));
+    els.practiceMissedButton.addEventListener("click", () => {
+      els.menuSelect.value = "missed";
+      startRound({ menu: "missed", type: "all", count: "10" });
+    });
+    els.resetButton.addEventListener("click", resetAll);
+    els.searchInput.addEventListener("input", renderStudyGuide);
+    els.fillForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      answerQuestion(els.fillAnswer.value);
+    });
+    els.serverNameInput.addEventListener("input", () => {
+      const value = cleanName(els.serverNameInput.value);
+      state.playerName = value;
+      state.storage.playerName = value;
+      saveStorage();
+      if (value) els.nameHint.textContent = "";
+    });
+    els.refreshScoresButton.addEventListener("click", loadScoreBoard);
+    els.scoreSearchInput.addEventListener("input", () => {
+      window.clearTimeout(els.scoreSearchInput._searchTimer);
+      els.scoreSearchInput._searchTimer = window.setTimeout(loadScoreBoard, 180);
+    });
+    window.addEventListener("popstate", renderRoute);
+
+    function registerWebMcpTools() {
+      const context = document.modelContext;
+      if (!context || typeof context.registerTool !== "function") return;
+      const lifecycle = new AbortController();
+      const safeRegister = (tool) => Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => {});
+
+      safeRegister({
+        name: "get_quiz_status",
+        title: "Get quiz status",
+        description: "Read the current Palmer Menu Quiz round, score, missed-card count, and active question.",
+        inputSchema: { type: "object", properties: {}, additionalProperties: false },
+        annotations: { readOnlyHint: true, untrustedContentHint: false },
+        execute() {
+          return {
+            ...resultSnapshot(),
+            missedCount: Object.keys(state.storage.missed).length,
+            activeQuestion: state.activeQuestion ? stripHtml(state.activeQuestion.prompt) : null
+          };
+        }
+      });
+
+      safeRegister({
+        name: "start_quiz_round",
+        title: "Start quiz round",
+        description: "Start a visible Palmer Menu Quiz round with optional menu, type, and count settings.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            playerName: { type: "string", minLength: 2, maxLength: 60 },
+            menu: { enum: ["mixed", "lunch", "dinner", "missed"] },
+            type: { enum: ["all", "ingredients", "prices", "sections", "rules"] },
+            count: { enum: ["10", "20", "30", "all"] }
+          },
+          additionalProperties: false
+        },
+        annotations: { readOnlyHint: false, untrustedContentHint: false },
+        execute(input) {
+          const options = input && typeof input === "object" ? input : {};
+          startRound(options);
+          return resultSnapshot();
+        }
+      });
+
+      safeRegister({
+        name: "answer_current_question",
+        title: "Answer current question",
+        description: "Submit an answer to the visible current quiz question and update the same score and missed-card state as the interface.",
+        inputSchema: {
+          type: "object",
+          properties: { answer: { type: "string", minLength: 1 } },
+          required: ["answer"],
+          additionalProperties: false
+        },
+        annotations: { readOnlyHint: false, untrustedContentHint: false },
+        execute(input) {
+          if (!input || typeof input.answer !== "string") throw new Error("answer is required");
+          return answerQuestion(input.answer);
+        }
+      });
+    }
+
+    renderStudyGuide();
+    updateSummary();
+    renderRoute();
+    registerWebMcpTools();
+  </script>
+</body>
+</html>
