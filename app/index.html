@@ -1203,22 +1203,28 @@
         if (signature) {
           questions.push(tagItemQuestion(entry, q(
             `signature-${entry.id}`,
-            `Which item includes ${signature}?`,
+            `Which of these items includes ${signature}?`,
             entry.name,
-            distractors(entry.name, MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.name), 3),
+            distractors(
+              entry.name,
+              MENU_ITEMS.filter((other) => other.id !== entry.id).map((other) => other.name),
+              3,
+              (option) => MENU_ITEMS.some((other) => other.name === option && descriptionIncludesComponent(other.description, signature))
+            ),
             entry.cue,
             sourceLabel(entry),
             "ingredients"
           )));
         }
 
-        const component = signature || componentParts(entry.description)[0];
+        const entryComponents = componentParts(entry.description);
+        const component = signature || entryComponents[0];
         if (component) {
           questions.push(tagItemQuestion(entry, q(
             `component-${entry.id}`,
-            `Which ingredient or component comes with ${entry.name}?`,
+            `Which of these ingredients or components comes with ${entry.name}?`,
             component,
-            distractors(component, dishComponents, 3),
+            distractors(component, dishComponents, 3, (option) => entryComponents.some((part) => sameAnswer(part, option))),
             `Build the plate in your head: ${entry.name} includes ${entry.description}.`,
             sourceLabel(entry),
             "ingredients"
@@ -1244,6 +1250,10 @@
         .filter((part) => part && part.length <= 90);
     }
 
+    function descriptionIncludesComponent(description, component) {
+      return componentParts(description).some((part) => sameAnswer(part, component));
+    }
+
     function sourceLabel(entry) {
       return entry.menu === "both" ? "Lunch and dinner" : `${capitalize(entry.menu)} ${entry.section}`;
     }
@@ -1256,8 +1266,16 @@
       return [...new Set(values)];
     }
 
-    function distractors(answer, pool, count) {
-      const choices = shuffle(unique(pool).filter((value) => value !== answer)).slice(0, count);
+    function distractors(answer, pool, count, reject = () => false) {
+      const seen = new Set([normalize(answer)]);
+      const choices = [];
+      shuffle(pool).forEach((value) => {
+        const key = normalize(value);
+        if (!key || seen.has(key) || reject(value)) return;
+        seen.add(key);
+        choices.push(value);
+      });
+      choices.length = Math.min(choices.length, count);
       return shuffle([answer, ...choices]);
     }
 
@@ -1480,6 +1498,10 @@
 
     function normalize(value) {
       return String(value || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9.]+/g, " ").trim();
+    }
+
+    function sameAnswer(left, right) {
+      return normalize(left) === normalize(right);
     }
 
     function updateMiss(question, correct) {
